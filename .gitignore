@@ -1,0 +1,11 @@
+node_modules/
+.turbo/
+.yarn/install-state.gz
+dist/
+coverage/
+.next/
+storybook-static/
+*.tsbuildinfo
+.env
+.env.*
+!.env.example

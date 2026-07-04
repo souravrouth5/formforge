@@ -1,0 +1,30 @@
+{
+  "name": "@easy-form-builder/themes",
+  "version": "0.1.0",
+  "description": "Official theme contracts and default themes for Easy Form Builder.",
+  "type": "module",
+  "sideEffects": false,
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "node ../../node_modules/tsup/dist/cli-default.js src/index.ts --format esm,cjs --dts --sourcemap --tsconfig tsconfig.build.json",
+    "typecheck": "node ../../node_modules/typescript/bin/tsc --noEmit",
+    "test": "node ../../node_modules/vitest/vitest.mjs run --passWithNoTests --pool=threads --maxWorkers=1 --minWorkers=1",
+    "lint": "node ../../node_modules/eslint/bin/eslint.js src tests --ext .ts",
+    "clean": "node -e \"fs.rmSync('dist',{recursive:true,force:true})\""
+  },
+  "dependencies": {
+    "@easy-form-builder/core": "workspace:*"
+  }
+}

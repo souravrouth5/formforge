@@ -1,0 +1,13 @@
+{
+  "name": "@easy-form-builder/docs",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "echo \"Docs app is not implemented yet.\"",
+    "build": "echo \"Docs app is not implemented yet.\"",
+    "typecheck": "node ../../node_modules/typescript/bin/tsc --noEmit",
+    "lint": "echo \"No docs app lint configured yet.\"",
+    "test": "echo \"No docs app tests configured yet.\"",
+    "clean": "echo \"No docs app build artifacts to clean.\""
+  }
+}

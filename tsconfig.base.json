@@ -1,0 +1,30 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "strict": true,
+    "noImplicitAny": true,
+    "strictNullChecks": true,
+    "noUncheckedIndexedAccess": true,
+    "exactOptionalPropertyTypes": true,
+    "isolatedModules": true,
+    "verbatimModuleSyntax": true,
+    "declaration": true,
+    "declarationMap": true,
+    "sourceMap": true,
+    "skipLibCheck": true,
+    "esModuleInterop": true,
+    "forceConsistentCasingInFileNames": true,
+    "resolveJsonModule": true,
+    "jsx": "react-jsx",
+    "paths": {
+      "@easy-form-builder/core": ["./packages/core/src/index.ts"],
+      "@easy-form-builder/react": ["./packages/react/src/index.ts"],
+      "@easy-form-builder/ui": ["./packages/ui/src/index.ts"],
+      "@easy-form-builder/themes": ["./packages/themes/src/index.ts"],
+      "@easy-form-builder/builder": ["./packages/builder/src/index.ts"]
+    }
+  }
+}

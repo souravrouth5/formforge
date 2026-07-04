@@ -1,0 +1,36 @@
+{
+  "name": "@easy-form-builder/builder",
+  "version": "0.1.0",
+  "description": "Future drag-and-drop schema builder for Easy Form Builder.",
+  "type": "module",
+  "sideEffects": false,
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "node ../../node_modules/tsup/dist/cli-default.js src/index.ts --format esm,cjs --dts --sourcemap --external react --external @easy-form-builder/core --tsconfig tsconfig.build.json",
+    "typecheck": "node ../../node_modules/typescript/bin/tsc --noEmit",
+    "test": "node ../../node_modules/vitest/vitest.mjs run --passWithNoTests --pool=threads --maxWorkers=1 --minWorkers=1",
+    "lint": "node ../../node_modules/eslint/bin/eslint.js src tests --ext .ts,.tsx",
+    "clean": "node -e \"fs.rmSync('dist',{recursive:true,force:true})\""
+  },
+  "peerDependencies": {
+    "react": ">=18.2.0"
+  },
+  "dependencies": {
+    "@easy-form-builder/core": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/react": "^19.1.8"
+  }
+}

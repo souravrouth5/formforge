@@ -1,0 +1,13 @@
+{
+  "name": "@easy-form-builder/playground",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "echo \"Playground app is not implemented yet.\"",
+    "build": "echo \"Playground app is not implemented yet.\"",
+    "typecheck": "node ../../node_modules/typescript/bin/tsc --noEmit",
+    "lint": "echo \"No playground lint configured yet.\"",
+    "test": "echo \"No playground tests configured yet.\"",
+    "clean": "echo \"No playground build artifacts to clean.\""
+  }
+}
