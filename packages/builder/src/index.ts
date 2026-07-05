@@ -269,6 +269,7 @@ export function createBuilderField(
     name: overrides.name ?? slugName(label),
     type: type as FieldType,
     label,
+    placeholder: overrides.placeholder ?? getDefaultPlaceholder(type),
     defaultValue: overrides.defaultValue ?? definition.defaultValue,
     layout: overrides.layout ?? { span: definition.defaultSpan },
   };
@@ -305,6 +306,33 @@ export function slugName(value: string): string {
     .join("");
 
   return slug || "field";
+}
+
+function getDefaultPlaceholder(type: BuilderFieldType): string {
+  switch (type) {
+    case "date":
+      return "Please select a date";
+    case "time":
+      return "Please select a time";
+    case "select":
+    case "radio":
+    case "checkbox":
+      return "Please select an option";
+    case "file":
+      return "Please upload a file";
+    case "number":
+    case "range":
+      return "Enter a number";
+    case "email":
+      return "Enter email address";
+    case "phone":
+      return "Enter phone number";
+    case "textarea":
+      return "Enter details";
+    case "text":
+    default:
+      return "Enter value";
+  }
 }
 
 function cloneField(field: FieldSchema): FieldSchema {
@@ -438,7 +466,7 @@ const BUILDER_FIELD_DEFINITIONS: BuilderFieldDefinition[] = [
     label: "Radio",
     description: "Single-selection option group.",
     defaultSpan: 12,
-    defaultValue: "option-a",
+    defaultValue: "",
     defaultOptions: [
       { label: "Option A", value: "option-a" },
       { label: "Option B", value: "option-b" },
@@ -452,7 +480,7 @@ const BUILDER_FIELD_DEFINITIONS: BuilderFieldDefinition[] = [
     label: "Select",
     description: "Select dropdown with editable options.",
     defaultSpan: 6,
-    defaultValue: "option-a",
+    defaultValue: "",
     defaultOptions: [
       { label: "Option A", value: "option-a" },
       { label: "Option B", value: "option-b" },
@@ -466,7 +494,7 @@ const BUILDER_FIELD_DEFINITIONS: BuilderFieldDefinition[] = [
     label: "Checkbox",
     description: "Boolean checkbox or multi-option checkbox group.",
     defaultSpan: 12,
-    defaultValue: ["option-a"],
+    defaultValue: [],
     defaultOptions: [
       { label: "Option A", value: "option-a" },
       { label: "Option B", value: "option-b" },

@@ -771,6 +771,16 @@ function DefaultFieldComponent(
           multiple: props.field.type === "multiselect",
           value: selectValue(props.value, props.field.type === "multiselect"),
         },
+        props.field.placeholder && props.field.type !== "multiselect"
+          ? createElement(
+              "option",
+              {
+                value: "",
+                disabled: props.field.required,
+              },
+              props.field.placeholder,
+            )
+          : null,
         (props.field.options ?? []).map((option) =>
           createElement(
             "option",

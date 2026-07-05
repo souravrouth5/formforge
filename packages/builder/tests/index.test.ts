@@ -49,7 +49,8 @@ describe("builder document helpers", () => {
 
     expect(select.type).toBe("select");
     expect(select.options).toHaveLength(3);
-    expect(select.defaultValue).toBe("option-a");
+    expect(select.defaultValue).toBe("");
+    expect(select.placeholder).toBe("Please select an option");
     expect(range.metadata).toEqual({ min: 0, max: 100, step: 10 });
     expect(file.metadata).toEqual({ accept: ".pdf", acceptTypes: [".pdf"] });
   });
