@@ -333,6 +333,7 @@ export type FieldType =
   | "email"
   | "password"
   | "phone"
+  | "range"
   | "url"
   | "date"
   | "time"
@@ -978,7 +979,8 @@ export interface SubmitResult<TData = unknown> {
 ```ts
 export interface FormProps<TValues extends FormValues = FormValues> {
   schema?: FormSchema<TValues>;
-  children?: React.ReactNode;
+  form?: UseFormReturn<TValues>;
+  children?: React.ReactNode | ((form: UseFormReturn<TValues>) => React.ReactNode);
   defaultValues?: Partial<TValues>;
   values?: Partial<TValues>;
   onValuesChange?(values: TValues, state: FormState<TValues>): void;
@@ -994,6 +996,8 @@ export interface FormProps<TValues extends FormValues = FormValues> {
   readonly?: boolean;
   className?: string;
   style?: React.CSSProperties;
+  renderSubmitButton?: boolean;
+  submitLabel?: React.ReactNode;
 }
 ```
 
@@ -1038,6 +1042,72 @@ The builder outputs schema:
 
 Builder output must not require a separate renderer.
 
+The builder package owns the reusable field catalog and field-specific builder
+settings. Consumers should import these definitions instead of recreating field
+option logic in each app.
+
+```ts
+export type BuilderFieldType =
+  | "text"
+  | "textarea"
+  | "number"
+  | "email"
+  | "phone"
+  | "range"
+  | "radio"
+  | "select"
+  | "checkbox"
+  | "date"
+  | "time"
+  | "file";
+
+export interface BuilderFieldDefinition {
+  type: BuilderFieldType;
+  label: string;
+  description: string;
+  defaultSpan: number;
+  defaultValue: FieldValue;
+  defaultOptions?: FieldOption[];
+  defaultMetadata?: Record<string, unknown>;
+  settings: BuilderSettingDefinition[];
+}
+
+export interface BuilderSettingDefinition {
+  key: string;
+  label: string;
+  kind: "text" | "number" | "boolean" | "select" | "options";
+  target: "field" | "metadata" | "options";
+  options?: FieldOption<string>[];
+}
+
+export interface BuilderDocument<TValues extends FormValues = FormValues> {
+  schema: FormSchema<TValues>;
+  selectedFieldId?: string;
+  metadata?: Record<string, unknown>;
+}
+```
+
+Required helper functions:
+
+```ts
+listBuilderFields(): BuilderFieldDefinition[];
+getBuilderFieldDefinition(type: BuilderFieldType): BuilderFieldDefinition;
+createBuilderField(type: BuilderFieldType, index?: number): FieldSchema;
+createBuilderDocument<TValues>(schema: FormSchema<TValues>): BuilderDocument<TValues>;
+addBuilderField<TValues>(document: BuilderDocument<TValues>, fieldOrType: FieldSchema | BuilderFieldType): BuilderDocument<TValues>;
+updateBuilderField<TValues>(document: BuilderDocument<TValues>, fieldId: string, patch: Partial<FieldSchema>): BuilderDocument<TValues>;
+updateBuilderFieldMetadata<TValues>(document: BuilderDocument<TValues>, fieldId: string, metadata: Record<string, unknown>): BuilderDocument<TValues>;
+removeBuilderField<TValues>(document: BuilderDocument<TValues>, fieldId: string): BuilderDocument<TValues>;
+moveBuilderField<TValues>(document: BuilderDocument<TValues>, sourceFieldId: string, targetFieldId: string): BuilderDocument<TValues>;
+addBuilderFieldOption<TValues>(document: BuilderDocument<TValues>, fieldId: string, option?: FieldOption): BuilderDocument<TValues>;
+updateBuilderFieldOption<TValues>(document: BuilderDocument<TValues>, fieldId: string, optionIndex: number, patch: Partial<FieldOption>): BuilderDocument<TValues>;
+removeBuilderFieldOption<TValues>(document: BuilderDocument<TValues>, fieldId: string, optionIndex: number): BuilderDocument<TValues>;
+fieldSupportsOptions(fieldOrType: FieldSchema | BuilderFieldType): boolean;
+```
+
+Bundled definitions must include select/radio/checkbox option settings, file
+accept settings, range min/max/step settings, and date/time format settings.
+
 ### 12.4 `useForm`
 
 ```ts
@@ -1047,37 +1117,94 @@ export interface UseFormOptions<TValues extends FormValues = FormValues> {
   validationAdapter?: ValidationAdapter<unknown, TValues>;
   plugins?: FormPlugin<Record<string, unknown>, TValues>[];
   registry?: FieldRegistry;
+  onSubmit?: SubmitHandler<TValues>;
 }
 ```
 
 ```ts
 export interface UseFormReturn<TValues extends FormValues = FormValues> {
   engine: FormEngine<TValues>;
+  control: FormEngine<TValues>;
   state: FormState<TValues>;
+  formState: FormState<TValues>;
   values: TValues;
   errors: FormErrors;
-  setValue<TValue = FieldValue>(name: string, value: TValue): void;
-  getValue<TValue = FieldValue>(name: string): TValue | undefined;
+  register<TValue extends FieldValue = FieldValue>(
+    name: FieldPath<TValues>,
+    options?: RegisterOptions<TValue>,
+  ): RegisteredFieldProps<TValues, TValue>;
+  handleSubmit(
+    onValid?: SubmitHandler<TValues>,
+    onInvalid?: (errors: FormErrors, state: FormState<TValues>) => void,
+  ): (event?: React.FormEvent<HTMLFormElement>) => Promise<SubmitResult>;
+  setValue<TValue extends FieldValue = FieldValue>(
+    name: FieldPath<TValues>,
+    value: TValue,
+  ): void;
+  getValue<TValue extends FieldValue = FieldValue>(
+    name: FieldPath<TValues>,
+  ): TValue | undefined;
+  watch(): TValues;
+  watch<TValue extends FieldValue = FieldValue>(
+    name: FieldPath<TValues>,
+  ): TValue | undefined;
   validate(): Promise<ValidationResult>;
+  validateField(name: FieldPath<TValues>): Promise<FieldValidationResult>;
   submit(): Promise<SubmitResult>;
   reset(values?: Partial<TValues>): void;
 }
 ```
 
+```ts
+export type FieldPath<TValues extends FormValues = FormValues> =
+  | Extract<keyof TValues, string>
+  | string;
+
+export interface RegisterOptions<TValue = FieldValue> {
+  valueAsNumber?: boolean;
+  valueAsBoolean?: boolean;
+  setValueAs?(value: unknown): TValue;
+  validateOnChange?: boolean;
+  validateOnBlur?: boolean;
+}
+
+export interface RegisteredFieldProps<
+  TValues extends FormValues = FormValues,
+  TValue extends FieldValue = FieldValue,
+> {
+  name: FieldPath<TValues>;
+  value?: TValue | undefined;
+  checked?: boolean | undefined;
+  onChange(eventOrValue: React.ChangeEvent<FormControlElement> | TValue): void;
+  onBlur(): void;
+  onFocus(): void;
+  ref(element: FormControlElement | null): void;
+}
+
+export type FormControlElement =
+  | HTMLInputElement
+  | HTMLSelectElement
+  | HTMLTextAreaElement;
+```
+
 ### 12.5 `useField`
 
 ```ts
-export interface UseFieldOptions<TValue = FieldValue> {
+export interface UseFieldOptions<TValue extends FieldValue = FieldValue> {
   name: string;
-  defaultValue?: TValue;
+  defaultValue?: TValue | undefined;
+  validateOnChange?: boolean | undefined;
+  validateOnBlur?: boolean | undefined;
 }
 ```
 
 ```ts
-export interface UseFieldReturn<TValue = FieldValue> {
+export interface UseFieldReturn<TValue extends FieldValue = FieldValue> {
+  name: string;
   value: TValue | undefined;
   state: FieldState<TValue>;
   errors: FieldError[];
+  field: RegisteredFieldProps<FormValues, TValue>;
   setValue(value: TValue): void;
   onChange(value: TValue): void;
   onBlur(): void;
@@ -1109,15 +1236,18 @@ export type UseWatchReturn<TValues extends FormValues = FormValues> =
 ```ts
 export interface FormProviderProps<TValues extends FormValues = FormValues> {
   form: UseFormReturn<TValues> | FormEngine<TValues>;
-  children: React.ReactNode;
+  children?: React.ReactNode;
 }
 ```
 
 ### 12.8 `FieldRenderer`
 
 ```ts
-export interface FieldRendererProps {
+export interface FieldRendererProps<TValues extends FormValues = FormValues> {
   field: FieldSchema;
+  components?: ComponentOverrideMap | undefined;
+  slots?: SlotOverrideMap | undefined;
+  form?: UseFormReturn<TValues> | undefined;
 }
 ```
 
@@ -1128,6 +1258,10 @@ export interface FieldRendererProps {
 - Bind field state and events.
 - Render accessibility attributes.
 - Render errors through the configured slot.
+
+Default field rendering must support at least `text`, `textarea`, `number`,
+`email`, `phone`, `range`, `radio`, `select`, `multiselect`, `date`, `time`,
+`password`, `url`, `checkbox`, `switch`, `file`, and `image`.
 
 ---
 

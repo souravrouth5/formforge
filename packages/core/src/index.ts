@@ -27,6 +27,7 @@ export type FieldType =
   | "email"
   | "password"
   | "phone"
+  | "range"
   | "url"
   | "date"
   | "time"

@@ -577,3 +577,78 @@ allowed only after validation or inside small adapter boundaries.
 - Validation adapters must normalize third-party errors into `FormErrors`.
 - Type-level tests must verify public API inference and prevent accidental
   widening to `any`.
+
+---
+
+## ADR-0017: Provide React Hook Form Style Controls Over Schema Forms
+
+Date: 2026-07-05
+
+Status: Accepted
+
+### Context
+
+React Hook Form is familiar to React developers for imperative form handling,
+but it does not provide a first-class schema and visual-builder output model.
+
+FormForge needs to serve both workflows:
+
+- Developers should be able to call `useForm`, `register`, `handleSubmit`,
+  `watch`, `setValue`, and `reset`.
+- Builder-generated schemas should render without hand-writing every field.
+- Custom components should still be replaceable by field type.
+
+### Decision
+
+The React package will expose an RHF-style hook API backed by the core
+`FormEngine`, while preserving schema as the source of truth for builder-driven
+forms.
+
+The default React renderer must support common production field types including
+text, textarea, number, email, phone, range, radio, select, multiselect, date,
+time, password, URL, checkbox, switch, file, and image.
+
+### Consequences
+
+- The React package becomes a real runtime package, not only a typed facade.
+- React is required as a peer dependency and as a package dev dependency for
+  tests.
+- Public React APIs must stay strongly typed and avoid `any`.
+- The schema renderer and hook API must remain interoperable so users can mix
+  generated fields with custom form markup.
+
+---
+
+## ADR-0018: Bundle Builder Field Definitions And Mutations In The Package
+
+Date: 2026-07-05
+
+Status: Accepted
+
+### Context
+
+If each consuming app must define field palettes, select/radio options,
+checkbox modes, file accept types, range min/max settings, and date/time formats,
+then the package is only a schema renderer and not a form builder solution.
+
+The builder package should reduce repeated app work while still allowing custom
+UI and custom field definitions.
+
+### Decision
+
+`@easy-form-builder/builder` owns the default builder field catalog,
+field-specific settings, field creation helpers, immutable builder document
+helpers, option helpers, metadata helpers, move/remove/select helpers, and
+option support detection.
+
+Apps can render their own builder UI, but the field behavior and schema mutation
+operations should come from the package.
+
+### Consequences
+
+- Consumers can import bundled field definitions instead of duplicating builder
+  rules.
+- Select, radio, and checkbox fields ship with option management behavior.
+- File, range, date, and time fields ship with type-specific metadata settings.
+- The builder package becomes a real public API surface and needs tests and
+  documentation alongside the core and React packages.

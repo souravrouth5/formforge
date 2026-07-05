@@ -7,9 +7,9 @@ schema. The framework-independent core owns state, validation, events, plugins,
 submission, and schema parsing. React bindings, UI components, themes, and the
 future visual builder are separate packages layered on top.
 
-> Current status: early implementation scaffold. The core engine APIs are usable
-> for programmatic forms today. The React renderer, UI components, and visual
-> builder packages expose typed API surfaces while implementation continues.
+> Current status: early implementation scaffold. The core engine and React hooks
+> are usable for schema-driven forms today. The default UI package and visual
+> builder are still early surfaces.
 
 ## Packages
 
@@ -24,10 +24,10 @@ future visual builder are separate packages layered on top.
 | Package | Purpose |
 | --- | --- |
 | `@easy-form-builder/core` | Framework-independent schema parser, form engine, state, validation adapters, field registry, events, plugins, and submission lifecycle. |
-| `@easy-form-builder/react` | React-facing API surface: `Form`, hooks, providers, renderers, component overrides, slots, and themes. Renderer implementation is in progress. |
+| `@easy-form-builder/react` | React hooks and renderer: `useForm`, `register`, `handleSubmit`, `watch`, `Form`, providers, default field renderers, component overrides, slots, and themes. |
 | `@easy-form-builder/ui` | Default accessible UI component package. Components are currently typed placeholders. |
 | `@easy-form-builder/themes` | Theme contracts and official theme presets. |
-| `@easy-form-builder/builder` | Future visual builder helpers. Currently includes builder document utilities. |
+| `@easy-form-builder/builder` | Builder field catalog, bundled field settings, document helpers, option helpers, and schema mutation utilities for visual form builders. |
 
 ## Installation
 
@@ -473,20 +473,34 @@ grid, flex, stack, accordion, tabs, card, sections, groups, divider
 
 ## React API
 
-The React package exposes the planned public API:
+The React package exposes an RHF-style API backed by the FormForge core engine:
 
 ```tsx
 import { Form, useForm } from "@easy-form-builder/react";
 ```
 
 ```tsx
-<Form schema={schema} />
-```
-
-```tsx
 const form = useForm({
   schema,
+  defaultValues: {
+    email: "ada@example.com",
+  },
 });
+
+const email = form.watch<string>("email");
+
+return (
+  <form onSubmit={form.handleSubmit(async (values) => ({ ok: true, data: values }))}>
+    <input type="email" {...form.register("email")} />
+    <button type="submit">Save</button>
+  </form>
+);
+```
+
+You can also render directly from schema:
+
+```tsx
+<Form schema={schema} defaultValues={defaults} onSubmit={saveLead} />
 ```
 
 ### `Form` Props
@@ -494,7 +508,8 @@ const form = useForm({
 ```ts
 interface FormProps<TValues> {
   schema?: FormSchema<TValues>;
-  children?: ReactNode;
+  form?: UseFormReturn<TValues>;
+  children?: ReactNode | ((form: UseFormReturn<TValues>) => ReactNode);
   defaultValues?: Partial<TValues>;
   values?: Partial<TValues>;
   onValuesChange?(values: TValues, state: FormState<TValues>): void;
@@ -509,6 +524,8 @@ interface FormProps<TValues> {
   readonly?: boolean;
   className?: string;
   style?: CSSProperties;
+  renderSubmitButton?: boolean;
+  submitLabel?: ReactNode;
 }
 ```
 
@@ -520,12 +537,18 @@ interface UseFormOptions<TValues> {
   defaultValues?: Partial<TValues>;
   validationAdapter?: ValidationAdapter<unknown, TValues>;
   plugins?: FormPlugin<Record<string, unknown>, TValues>[];
+  onSubmit?: SubmitHandler<TValues>;
 }
 ```
 
-> Note: React rendering, context-backed hooks, and field rendering are still in
-> progress. The current package exports the typed API surface and a core-backed
-> `useForm` facade.
+`useForm` returns `register`, `handleSubmit`, `setValue`, `getValue`, `watch`,
+`validate`, `validateField`, `submit`, `reset`, `values`, `errors`, and
+`formState`.
+
+Default schema rendering supports `text`, `textarea`, `number`, `email`,
+`phone`, `range`, `radio`, `select`, `multiselect`, `date`, `time`, `password`,
+`url`, `checkbox`, `switch`, `file`, and `image` fields. Custom components can
+replace any field type.
 
 ## Component Overrides
 
@@ -546,6 +569,7 @@ interface ReactFieldComponentProps<TValue, TField> {
   field: TField;
   value: TValue | undefined;
   state: FieldState<TValue>;
+  register: RegisteredFieldProps;
   onChange(value: TValue): void;
   onBlur(): void;
   onFocus(): void;
@@ -608,25 +632,43 @@ interface FormTheme {
 
 ## Builder Helpers
 
-The builder package currently includes typed document helpers.
+The builder package includes a typed field catalog and immutable document
+helpers. Apps do not need to reinvent select/radio/checkbox options, file accept
+settings, range settings, or date/time format settings.
 
 ```ts
 import {
   addBuilderField,
+  addBuilderFieldOption,
   createBuilderDocument,
+  getBuilderFieldDefinition,
+  listBuilderFields,
+  updateBuilderFieldMetadata,
 } from "@easy-form-builder/builder";
 
 const document = createBuilderDocument(schema);
 
-const updated = addBuilderField(document, {
-  id: "age-field",
-  name: "age",
-  type: "number",
+const fields = listBuilderFields();
+const selectDefinition = getBuilderFieldDefinition("select");
+
+const withSelect = addBuilderField(document, "select");
+const selectedFieldId = withSelect.selectedFieldId;
+
+if (!selectedFieldId) {
+  throw new Error("No selected field.");
+}
+
+const withOption = addBuilderFieldOption(withSelect, selectedFieldId, {
+  label: "Enterprise",
+  value: "enterprise",
+});
+const withFileTypes = updateBuilderFieldMetadata(withOption, "resume", {
+  accept: ".pdf,.doc,.docx",
 });
 ```
 
-The future visual builder will emit the same `FormSchema` consumed by the core
-engine and React renderer.
+Builder output is still the same `FormSchema` consumed by the core engine and
+React renderer.
 
 ## Type Safety
 
